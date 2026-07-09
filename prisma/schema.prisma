@@ -1,0 +1,98 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ENUMS
+
+enum CarBodyType {
+  SEDAN
+  SUV
+  HATCHBACK
+  COUPE
+  WAGON
+  PICKUP
+}
+
+enum CarColor {
+  BLACK
+  WHITE
+  SILVER
+  RED
+  BLUE
+  GREEN
+  GRAY
+}
+
+enum CarDriveType {
+  FWD
+  RWD
+  AWD
+}
+
+enum CarFuelType {
+  PETROL
+  DIESEL
+  HYBRID
+  ELECTRIC
+}
+
+enum CarStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+}
+
+enum CarTransmission {
+  MANUAL
+  AUTOMATIC
+  CVT
+  ROBOT
+}
+
+// MODELS
+
+model Brand {
+  id      Int    @id @default(autoincrement())
+  name    String
+  country String
+  logo    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cars Car[]
+}
+
+model Car {
+  id           Int             @id @default(autoincrement())
+  title        String
+  description  String
+  price        Decimal
+  year         Int
+  mileage      Int
+  engineVolume Int
+  horsepower   Int
+  fuelType     CarFuelType
+  transmission CarTransmission
+  driveType    CarDriveType
+  bodyType     CarBodyType
+  color        CarColor
+  status       CarStatus
+
+  brandId Int
+  brand   Brand @relation(fields: [brandId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

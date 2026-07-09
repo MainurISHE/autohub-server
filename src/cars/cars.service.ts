@@ -1,18 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Car } from './entities/car.entity';
-import { CreateCarDto } from './dto/create-car.dto';
+import { Car } from '../common/entities/car.entity';
+import { CreateCarDto } from '../common/dto/create-car.dto';
+import { UpdateCarDto } from '../common/dto/update-car.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class CarsService {
-  private cars: Car[] = [];
-  private nextId = 1;
+  constructor(private readonly prisma: PrismaService) {}
 
   findAll() {
-    return this.cars;
+    return this.prisma.car.findMany();
   }
 
-  findOne(id: number) {
-    const car = this.findAll().find((car) => car.id === id);
+  async findOne(id: number) {
+    const car = await this.prisma.car.findUnique({
+      where: { id },
+    });
 
     if (!car) {
       throw new NotFoundException('Car is not found');
@@ -22,17 +25,25 @@ export class CarsService {
   }
 
   create(createCarDto: CreateCarDto) {
-    const id = this.nextId++;
+    return this.prisma.car.create({
+      data: createCarDto,
+    });
+  }
 
-    const car: Car = {
-      id,
-      ...createCarDto,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+  async update(id: number, updateCarDto: UpdateCarDto) {
+    await this.findOne(id);
 
-    this.cars.push(car);
+    return this.prisma.car.update({
+      where: { id },
+      data: updateCarDto,
+    });
+  }
 
-    return car;
+  async remove(id: number) {
+    await this.findOne(id);
+
+    return this.prisma.car.delete({
+      where: { id },
+    });
   }
 }

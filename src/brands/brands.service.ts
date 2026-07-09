@@ -1,51 +1,52 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CreateBrandDto } from './dto/create-brand.dto';
+import { CreateBrandDto } from '../common/dto/create-brand.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { UpdateBrandDto } from 'src/common/dto/update-brand.dto';
 
 @Injectable()
 export class BrandsService {
-  private nextId = 1;
-  private brands = [
-    {
-      id: 1,
-      name: 'BMW',
-      country: 'Germany',
-    },
-    {
-      id: 2,
-      name: 'Audi',
-      country: 'Germany',
-    },
-    {
-      id: 3,
-      name: 'Mercedes-Benz',
-      country: 'Germany',
-    },
-  ];
+  constructor(private readonly prisma: PrismaService) {}
 
   findAll() {
-    return this.brands;
+    return this.prisma.brand.findMany();
   }
 
-  findOne(id: number) {
-    const brand = this.findAll().find((brand) => brand.id === id);
+  async findOne(id: number) {
+    const brand = await this.prisma.brand.findUnique({
+      where: {
+        id,
+      },
+    });
 
     if (!brand) {
-      throw new NotFoundException('Brand is not found');
+      throw new NotFoundException('Brand not found');
     }
 
     return brand;
   }
 
   create(createBrandDto: CreateBrandDto) {
-    const id = this.nextId++;
+    return this.prisma.brand.create({
+      data: createBrandDto,
+    });
+  }
 
-    const brand = {
-      id,
-      ...createBrandDto,
-    };
+  async update(id: number, updateBrandDto: UpdateBrandDto) {
+    await this.findOne(id);;
 
-    this.brands.push(brand);
+    return this.prisma.brand.update({
+      where: {
+        id,
+      },
+      data: updateBrandDto,
+    });
+  }
 
-    return brand;
+  async remove(id: number) {
+    await this.findOne(id);
+
+    return this.prisma.brand.delete({
+      where: { id },
+    });
   }
 }

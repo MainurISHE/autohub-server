@@ -1,15 +1,16 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { CarsService } from './cars.service';
 import { UpdateCarDto } from '../common/dto/update-car.dto';
 import { CreateCarDto } from 'src/common/dto/create-car.dto';
+import { GetCarsQueryDto } from 'src/common/dto/get-cars-query.dto';
 
 @Controller('cars')
 export class CarsController {
     constructor(private readonly carsService: CarsService) {}
 
     @Get()
-    findAll() {
-        return this.carsService.findAll()
+    findAll(@Query() getCarsQueryDto: GetCarsQueryDto) {
+        return this.carsService.findAll(getCarsQueryDto)
     }
 
     @Get(':id')

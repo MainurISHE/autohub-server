@@ -4,6 +4,7 @@ import { UpdateCarDto } from '../common/dto/update-car.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GetCarsQueryDto } from 'src/common/dto/get-cars-query.dto';
 import { Prisma } from '@prisma/client';
+import { SortOrder } from 'src/common/enums/sort-order.enum';
 
 @Injectable()
 export class CarsService {
@@ -12,8 +13,26 @@ export class CarsService {
   findAll(getCarsQueryDto: GetCarsQueryDto) {
     const where: Prisma.CarWhereInput = {};
     const price: Prisma.IntFilter = {};
+    const orderBy: Prisma.CarOrderByWithRelationInput = {};
+    const page = getCarsQueryDto.page ?? 1;
+    const limit = getCarsQueryDto.limit ?? 10;
 
-    if (getCarsQueryDto.minPrice) {
+    const skip = (page - 1) * limit;
+
+    if (getCarsQueryDto.sortBy) {
+      const order = getCarsQueryDto.order ?? SortOrder.ASC;
+
+      orderBy[getCarsQueryDto.sortBy] = order;
+    }
+
+    if (getCarsQueryDto.search) {
+      where.title = {
+        contains: getCarsQueryDto.search,
+        mode: 'insensitive',
+      };
+    }
+
+    if (getCarsQueryDto.minPrice != null) {
       price.gte = getCarsQueryDto.minPrice;
     }
 
@@ -53,20 +72,11 @@ export class CarsService {
       where.color = getCarsQueryDto.color;
     }
 
-    if (getCarsQueryDto.minPrice) {
-      where.price = {
-        gte: getCarsQueryDto.minPrice,
-      };
-    }
-
-    if (getCarsQueryDto.maxPrice) {
-      where.price = {
-        lte: getCarsQueryDto.maxPrice,
-      };
-    }
-
     return this.prisma.car.findMany({
       where,
+      orderBy,
+      skip,
+      take: limit,
       include: {
         brand: true,
       },

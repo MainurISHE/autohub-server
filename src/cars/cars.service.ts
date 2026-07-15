@@ -5,12 +5,13 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { GetCarsQueryDto } from 'src/common/dto/get-cars-query.dto';
 import { Prisma } from '@prisma/client';
 import { SortOrder } from 'src/common/enums/sort-order.enum';
+import { metadata } from 'reflect-metadata/no-conflict';
 
 @Injectable()
 export class CarsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll(getCarsQueryDto: GetCarsQueryDto) {
+  async findAll(getCarsQueryDto: GetCarsQueryDto) {
     const where: Prisma.CarWhereInput = {};
     const price: Prisma.IntFilter = {};
     const orderBy: Prisma.CarOrderByWithRelationInput = {};
@@ -36,7 +37,7 @@ export class CarsService {
       price.gte = getCarsQueryDto.minPrice;
     }
 
-    if (getCarsQueryDto.maxPrice) {
+    if (getCarsQueryDto.maxPrice != null) {
       price.lte = getCarsQueryDto.maxPrice;
     }
 
@@ -44,7 +45,7 @@ export class CarsService {
       where.price = price;
     }
 
-    if (getCarsQueryDto.brandId) {
+    if (getCarsQueryDto.brandId != null) {
       where.brandId = getCarsQueryDto.brandId;
     }
 
@@ -72,7 +73,13 @@ export class CarsService {
       where.color = getCarsQueryDto.color;
     }
 
-    return this.prisma.car.findMany({
+    const total = await this.prisma.car.count({
+      where,
+    });
+
+    const totalPages = Math.ceil(total / limit);
+
+    const cars = await this.prisma.car.findMany({
       where,
       orderBy,
       skip,
@@ -81,6 +88,21 @@ export class CarsService {
         brand: true,
       },
     });
+
+    const hasNextPage = page < totalPages;
+    const hasPreviousPage = page > 1;
+
+    return {
+      data: cars,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNextPage,
+        hasPreviousPage,
+      },
+    };
   }
 
   async findOne(id: number) {

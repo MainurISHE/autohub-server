@@ -1,15 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCarDto } from '../common/dto/create-car.dto';
 import { UpdateCarDto } from '../common/dto/update-car.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GetCarsQueryDto } from 'src/common/dto/get-cars-query.dto';
 import { Prisma } from '@prisma/client';
 import { SortOrder } from 'src/common/enums/sort-order.enum';
-import { metadata } from 'reflect-metadata/no-conflict';
+import { BrandsService } from 'src/brands/brands.service';
 
 @Injectable()
 export class CarsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly brandsService: BrandsService,
+  ) {}
 
   async findAll(getCarsQueryDto: GetCarsQueryDto) {
     const where: Prisma.CarWhereInput = {};
@@ -137,9 +140,27 @@ export class CarsService {
   async update(id: number, updateCarDto: UpdateCarDto) {
     await this.findOne(id);
 
+    const { brandId, ...carData } = updateCarDto;
+
+    if (brandId != null) {
+      await this.brandsService.findOne(brandId);
+
+      return this.prisma.car.update({
+        where: { id },
+        data: {
+          ...carData,
+          brand: {
+            connect: {
+              id: brandId,
+            },
+          },
+        },
+      });
+    }
+
     return this.prisma.car.update({
       where: { id },
-      data: updateCarDto,
+      data: carData,
     });
   }
 

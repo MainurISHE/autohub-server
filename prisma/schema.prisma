@@ -60,6 +60,11 @@ enum CarTransmission {
   ROBOT
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 // MODELS
 
 model Brand {
@@ -95,4 +100,18 @@ model Car {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  name        String
+  lastName    String
+  email       String   @unique
+  password    String
+  phoneNumber String?
+
+  role Role @default(USER)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

@@ -14,6 +14,14 @@ export class UsersService {
     });
   }
 
+  async findById(id: number) {
+    return this.prisma.user.findUnique({
+      where: {
+        id,
+      }
+    })
+  }
+
   async create(registerDto: RegisterDto, hashedPassword: string) {
     const { password, ...userData } = registerDto
     return this.prisma.user.create({

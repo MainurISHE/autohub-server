@@ -109,6 +109,7 @@ model User {
   email       String   @unique
   password    String
   phoneNumber String?
+  refreshToken String?
 
   role Role @default(USER)
 

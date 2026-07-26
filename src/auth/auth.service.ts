@@ -6,6 +6,8 @@ import * as bcrypt from 'bcrypt';
 import { LoginDto } from 'src/auth/dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import { UserMapper } from 'src/users/mappers/user.mapper';
+import { AccessTokenPayload } from './interfaces/access-token-payload.interface';
+import { RefreshTokenPayload } from './interfaces/refresh-token-payload.interface';
 
 @Injectable()
 export class AuthService {
@@ -29,7 +31,7 @@ export class AuthService {
       hashedPassword,
     );
 
-    return this.userMapper.toResponseDto(createdUser)
+    return this.userMapper.toResponseDto(createdUser);
   }
 
   async login(loginDto: LoginDto) {
@@ -48,16 +50,41 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const payload = {
+    const accessPayload: AccessTokenPayload = {
       sub: user.id,
       email: user.email,
       role: user.role,
     };
 
-    const accessToken = await this.jwtService.signAsync(payload);
+    const refreshPayload: RefreshTokenPayload = {
+      sub: user.id,
+    };
+
+    const accessToken = await this.generateAccessToken(accessPayload);
+    const refreshToken = await this.generateRefreshToken(refreshPayload);
+
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+
+    await this.usersService.saveRefreshToken(user.id, hashedRefreshToken);
 
     return {
       accessToken,
+      refreshToken,
     };
+  }
+
+  private async generateAccessToken(
+    payload: AccessTokenPayload,
+  ): Promise<string> {
+    return this.jwtService.signAsync(payload, {
+      secret: '',
+      expiresIn: '7d',
+    });
+  }
+
+  private async generateRefreshToken(
+    payload: RefreshTokenPayload,
+  ): Promise<string> {
+    return this.jwtService.signAsync(payload);
   }
 }

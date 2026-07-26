@@ -36,7 +36,7 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    return this.userMapper.toResponseDto(user)
+    return this.userMapper.toResponseDto(user);
   }
 
   async create(registerDto: RegisterDto, hashedPassword: string) {
@@ -64,9 +64,23 @@ export class UsersService {
     await this.findById(id);
 
     const user = await this.prisma.user.delete({
-      where: {id}
-    })
+      where: { id },
+    });
 
-    return this.userMapper.toResponseDto(user)
+    return this.userMapper.toResponseDto(user);
+  }
+
+  async saveRefreshToken(
+    userId: number,
+    hashedRefreshToken: string,
+  ): Promise<void> {
+    await this.prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        refreshToken: hashedRefreshToken,
+      },
+    });
   }
 }

@@ -1,16 +1,18 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { RegisterDto } from 'src/common/dto/register.dto';
+import { RegisterDto } from 'src/auth/dto/register.dto';
 import { UsersService } from 'src/users/users.service';
 import { ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { LoginDto } from 'src/common/dto/login.dto';
+import { LoginDto } from 'src/auth/dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
+import { UserMapper } from 'src/users/mappers/user.mapper';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly userMapper: UserMapper,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -27,9 +29,7 @@ export class AuthService {
       hashedPassword,
     );
 
-    const { password, ...result } = createdUser;
-
-    return result;
+    return this.userMapper.toResponseDto(createdUser)
   }
 
   async login(loginDto: LoginDto) {

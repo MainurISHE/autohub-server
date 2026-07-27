@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UserMapper } from 'src/users/mappers/user.mapper';
 import { AccessTokenPayload } from './interfaces/access-token-payload.interface';
 import { RefreshTokenPayload } from './interfaces/refresh-token-payload.interface';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -50,6 +51,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    return this.issueTokens(user);
+  }
+
+  private async issueTokens(user: User) {
     const accessPayload: AccessTokenPayload = {
       sub: user.id,
       email: user.email,
@@ -86,5 +91,23 @@ export class AuthService {
     payload: RefreshTokenPayload,
   ): Promise<string> {
     return this.jwtService.signAsync(payload);
+  }
+
+  async refresh(user: User, refreshToken: string) {
+    if (!user.refreshToken) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const isValid = await bcrypt.compare(refreshToken, user.refreshToken);
+
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    return this.issueTokens(user);
+  }
+
+  async logout(userId: number) {
+    await this.usersService.removeRefreshToken(userId)
   }
 }

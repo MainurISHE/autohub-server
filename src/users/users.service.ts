@@ -39,6 +39,20 @@ export class UsersService {
     return this.userMapper.toResponseDto(user);
   }
 
+  async findByIdWithRefreshToken(id: number) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
   async create(registerDto: RegisterDto, hashedPassword: string) {
     const { password, ...userData } = registerDto;
     return this.prisma.user.create({
@@ -80,6 +94,17 @@ export class UsersService {
       },
       data: {
         refreshToken: hashedRefreshToken,
+      },
+    });
+  }
+
+  async removeRefreshToken(userId: number): Promise<void> {
+    await this.prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        refreshToken: null,
       },
     });
   }

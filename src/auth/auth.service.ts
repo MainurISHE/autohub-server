@@ -9,6 +9,8 @@ import { UserMapper } from 'src/users/mappers/user.mapper';
 import { AccessTokenPayload } from './interfaces/access-token-payload.interface';
 import { RefreshTokenPayload } from './interfaces/refresh-token-payload.interface';
 import { User } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
+import type { StringValue } from 'ms';
 
 @Injectable()
 export class AuthService {
@@ -16,6 +18,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly userMapper: UserMapper,
+    private readonly configService: ConfigService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -82,18 +85,26 @@ export class AuthService {
     payload: AccessTokenPayload,
   ): Promise<string> {
     return this.jwtService.signAsync(payload, {
-      secret: '',
-      expiresIn: '7d',
+      secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
+      expiresIn: this.configService.getOrThrow<StringValue>(
+        'JWT_ACCESS_EXPIRES_IN',
+      ),
     });
   }
 
   private async generateRefreshToken(
     payload: RefreshTokenPayload,
   ): Promise<string> {
-    return this.jwtService.signAsync(payload);
+    return this.jwtService.signAsync(payload, {
+      secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
+      expiresIn: this.configService.getOrThrow<StringValue>(
+        'JWT_REFRESH_EXPIRES_IN',
+      ),
+    });
   }
 
   async refresh(user: User, refreshToken: string) {
+
     if (!user.refreshToken) {
       throw new UnauthorizedException('Invalid refresh token');
     }
@@ -108,6 +119,6 @@ export class AuthService {
   }
 
   async logout(userId: number) {
-    await this.usersService.removeRefreshToken(userId)
+    await this.usersService.removeRefreshToken(userId);
   }
 }

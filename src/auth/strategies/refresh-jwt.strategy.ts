@@ -25,13 +25,14 @@ export class RefreshJwtStrategy extends PassportStrategy(
   }
 
   async validate(req: Request, payload: RefreshTokenPayload) {
+
     const refreshToken = req.cookies?.refreshToken;
 
     if (!refreshToken) {
-      throw new UnauthorizedException('Refresh token not found')
+      throw new UnauthorizedException('Refresh token not found');
     }
 
-    const user = await this.usersService.findById(payload.sub);
+    const user = await this.usersService.findByIdWithRefreshToken(payload.sub);
 
     if (!user) {
       throw new UnauthorizedException('User not found');

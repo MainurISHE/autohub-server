@@ -16,6 +16,7 @@ import { User } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import type { StringValue } from 'ms';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class AuthService {
@@ -155,12 +156,32 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(changePasswordDto.newPassword, 10);
 
-    await this.usersService.updatePassword(user.id, hashedPassword)
+    await this.usersService.updatePassword(user.id, hashedPassword);
 
-    await this.usersService.removeRefreshToken(user.id)
+    await this.usersService.removeRefreshToken(user.id);
 
     return {
-      message: 'Password changed successfully'
+      message: 'Password changed successfully',
+    };
+  }
+
+  async updateProfile(userId: number, updateProfileDto: UpdateProfileDto) {
+    const user = await this.usersService.findByIdWithPassword(userId);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
     }
+
+    if (updateProfileDto.email) {
+      const existingUser = await this.usersService.findByEmail(
+        updateProfileDto.email,
+      );
+
+      if (existingUser && existingUser.id !== user.id) {
+        throw new ConflictException('Email is alredy in use');
+      }
+    }
+
+    return this.usersService.updateProfile(user.id, updateProfileDto);
   }
 }

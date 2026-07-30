@@ -19,6 +19,7 @@ import type { Response } from 'express';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { User } from '@prisma/client';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -57,6 +58,15 @@ export class AuthController {
     return this.userMapper.toResponseDto(user);
   }
 
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  updateProfile(
+    @CurrentUser() user: User,
+    @Body() updateProfileDto: UpdateProfileDto,
+  ) {
+    return this.authService.updateProfile(user.id, updateProfileDto);
+  }
+
   @Post('refresh')
   @UseGuards(RefreshJwtAuthGuard)
   refresh(@Req() req: RefreshRequest) {
@@ -86,6 +96,6 @@ export class AuthController {
     @CurrentUser() user: User,
     @Body() changePasswordDto: ChangePasswordDto,
   ) {
-    return this.authService.changePassword(user.id, changePasswordDto)
+    return this.authService.changePassword(user.id, changePasswordDto);
   }
 }

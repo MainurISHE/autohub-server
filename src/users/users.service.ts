@@ -3,6 +3,7 @@ import { RegisterDto } from 'src/auth/dto/register.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserMapper } from './mappers/user.mapper';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateProfileDto } from 'src/auth/dto/update-profile.dto';
 
 @Injectable()
 export class UsersService {
@@ -124,6 +125,19 @@ export class UsersService {
       },
       data: {
         password,
+      },
+    });
+  }
+
+  async updateProfile(userId: number, updateProfileDto: UpdateProfileDto) {
+    return this.prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: updateProfileDto,
+      omit: {
+        password: true,
+        refreshToken: true,
       },
     });
   }

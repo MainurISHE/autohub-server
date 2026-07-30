@@ -7,6 +7,8 @@ import { BrandsModule } from './brands/brands.module';
 import { CarsModule } from './cars/cars.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { UploadsModule } from './uploads/uploads.module';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { UsersModule } from './users/users.module';
     CarsModule,
     AuthModule,
     UsersModule,
+    UploadsModule,
+    CloudinaryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

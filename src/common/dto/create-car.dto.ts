@@ -1,4 +1,6 @@
 import {
+  ArrayNotEmpty,
+  IsArray,
   IsEnum,
   IsNotEmpty,
   IsNumber,
@@ -6,6 +8,7 @@ import {
   IsString,
   Max,
   Min,
+  ValidateNested,
 } from 'class-validator';
 
 import { CarStatus } from '../enums/car-status.enum';
@@ -14,6 +17,8 @@ import { CarColor } from '../enums/car-color.enum';
 import { CarTransmission } from '../enums/car-transmission.enum';
 import { CarDriveType } from '../enums/car-drive-type.enum';
 import { CarBodyType } from '../enums/car-body-type.enum';
+import { CreateCarImageDto } from './create-car-image.dto';
+import { Type } from 'class-transformer';
 
 export class CreateCarDto {
   @IsNotEmpty()
@@ -78,4 +83,10 @@ export class CreateCarDto {
   @IsNumber()
   @IsPositive()
   brandId!: number;
+
+  @IsArray()
+  @ArrayNotEmpty()
+  @ValidateNested({ each: true })
+  @Type(() => CreateCarImageDto)
+  images!: CreateCarImageDto[]
 }

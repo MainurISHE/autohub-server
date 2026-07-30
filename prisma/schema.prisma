@@ -94,12 +94,23 @@ model Car {
   bodyType     CarBodyType
   color        CarColor
   status       CarStatus
+  images CarImage[]
 
   brandId Int
   brand   Brand @relation(fields: [brandId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model CarImage {
+  id Int             @id @default(autoincrement())
+  url String
+  publicId String
+  order Int
+  carId Int
+  car Car @relation(fields: [carId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }
 
 model User {

@@ -6,12 +6,14 @@ import { GetCarsQueryDto } from 'src/common/dto/get-cars-query.dto';
 import { Prisma } from '@prisma/client';
 import { SortOrder } from 'src/common/enums/sort-order.enum';
 import { BrandsService } from 'src/brands/brands.service';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class CarsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly brandsService: BrandsService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async findAll(getCarsQueryDto: GetCarsQueryDto) {
@@ -89,6 +91,11 @@ export class CarsService {
       take: limit,
       include: {
         brand: true,
+        images: {
+          orderBy: {
+            order: 'asc',
+          },
+        },
       },
     });
 
@@ -111,7 +118,7 @@ export class CarsService {
   async findOne(id: number) {
     const car = await this.prisma.car.findUnique({
       where: { id },
-      include: { brand: true },
+      include: { brand: true, images: { orderBy: { order: 'asc' } } },
     });
 
     if (!car) {
@@ -122,7 +129,7 @@ export class CarsService {
   }
 
   create(createCarDto: CreateCarDto) {
-    const { brandId, ...carData } = createCarDto;
+    const { brandId, images, ...carData } = createCarDto;
 
     return this.prisma.car.create({
       data: {
@@ -133,6 +140,10 @@ export class CarsService {
             id: brandId,
           },
         },
+
+        images: {
+          create: images,
+        },
       },
     });
   }
@@ -140,7 +151,7 @@ export class CarsService {
   async update(id: number, updateCarDto: UpdateCarDto) {
     await this.findOne(id);
 
-    const { brandId, ...carData } = updateCarDto;
+    const { brandId, images, ...carData } = updateCarDto;
 
     if (brandId != null) {
       await this.brandsService.findOne(brandId);
@@ -165,7 +176,11 @@ export class CarsService {
   }
 
   async remove(id: number) {
-    await this.findOne(id);
+    const car = await this.findOne(id);
+
+    for (const image of car.images) {
+      await this.cloudinaryService.destroy(image.publicId);
+    }
 
     return this.prisma.car.delete({
       where: { id },

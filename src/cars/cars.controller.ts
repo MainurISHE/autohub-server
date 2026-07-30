@@ -1,12 +1,18 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { CarsService } from './cars.service';
 import { UpdateCarDto } from '../common/dto/update-car.dto';
 import { CreateCarDto } from 'src/common/dto/create-car.dto';
 import { GetCarsQueryDto } from 'src/common/dto/get-cars-query.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import type { User } from '@prisma/client';
 
 @Controller('cars')
 export class CarsController {
-    constructor(private readonly carsService: CarsService) {}
+    constructor(
+        private readonly carsService: CarsService,
+
+    ) {}
 
     @Get()
     findAll(@Query() getCarsQueryDto: GetCarsQueryDto) {
@@ -19,20 +25,30 @@ export class CarsController {
     }
 
     @Post()
-    create(@Body() createCarDto: CreateCarDto) {
-        return this.carsService.create(createCarDto)
+    @UseGuards(JwtAuthGuard)
+    create(
+        @Body() createCarDto: CreateCarDto,
+        @CurrentUser() user: User,
+    ) {
+        return this.carsService.create(createCarDto, user.id)
     }
 
     @Patch(':id')
+    @UseGuards(JwtAuthGuard)
     update(
         @Param('id', ParseIntPipe) id: number,
-        @Body() updateCarDto: UpdateCarDto
+        @Body() updateCarDto: UpdateCarDto,
+        @CurrentUser() user: User,
     ) {
-        return this.carsService.update(id, updateCarDto)
+        return this.carsService.update(id, updateCarDto, user)
     }
 
     @Delete(':id')
-    remove(@Param('id', ParseIntPipe) id: number) {
-        return this.carsService.remove(id)
+    @UseGuards(JwtAuthGuard)
+    remove(
+        @Param('id', ParseIntPipe) id: number,
+        @CurrentUser() user: User,
+    ) {
+        return this.carsService.remove(id, user)
     }
 }

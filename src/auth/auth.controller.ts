@@ -5,7 +5,6 @@ import {
   Post,
   Req,
   Res,
-  Request,
   UseGuards,
 } from '@nestjs/common';
 import { RegisterDto } from 'src/auth/dto/register.dto';
@@ -16,7 +15,8 @@ import { UserMapper } from 'src/users/mappers/user.mapper';
 import { RefreshJwtAuthGuard } from './guards/jwt-refresh-auth.guard';
 import type { RefreshRequest } from './interfaces/refresh-request.interface';
 import type { Response } from 'express';
-import type { AuthRequest } from './interfaces/auth-request.interface';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import type { User } from '@prisma/client';
 
 @Controller('auth')
 export class AuthController {
@@ -51,8 +51,8 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  getProfile(@Request() req) {
-    return this.userMapper.toResponseDto(req.user);
+  getProfile(@CurrentUser() user: User) {
+    return this.userMapper.toResponseDto(user);
   }
 
   @Post('refresh')
@@ -66,12 +66,12 @@ export class AuthController {
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   async logout(
-    @Req() req: AuthRequest,
+    @CurrentUser() user: User,
     @Res({ passthrough: true }) res: Response,
   ) {
     res.clearCookie('refreshToken');
 
-    await this.authService.logout(req.user.id);
+    await this.authService.logout(user.id);
 
     return {
       message: 'Logged out successfully',

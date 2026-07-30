@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { FavoritesModule } from './favorites/favorites.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
     UsersModule,
     UploadsModule,
     CloudinaryModule,
+    FavoritesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

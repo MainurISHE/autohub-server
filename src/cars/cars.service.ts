@@ -1,9 +1,14 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateCarDto } from '../common/dto/create-car.dto';
 import { UpdateCarDto } from '../common/dto/update-car.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GetCarsQueryDto } from 'src/common/dto/get-cars-query.dto';
-import { Prisma } from '@prisma/client';
+import { Prisma, Role, User } from '@prisma/client';
 import { SortOrder } from 'src/common/enums/sort-order.enum';
 import { BrandsService } from 'src/brands/brands.service';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
@@ -128,7 +133,24 @@ export class CarsService {
     return car;
   }
 
-  create(createCarDto: CreateCarDto) {
+  async findMyCars(userId: number) {
+    return this.prisma.car.findMany({
+      where: {
+        ownerId: userId,
+      },
+
+      include: {
+        brand: true,
+        images: {
+          orderBy: {
+            order: 'asc',
+          },
+        },
+      },
+    });
+  }
+
+  create(createCarDto: CreateCarDto, ownerId: number) {
     const { brandId, images, ...carData } = createCarDto;
 
     return this.prisma.car.create({
@@ -141,6 +163,12 @@ export class CarsService {
           },
         },
 
+        owner: {
+          connect: {
+            id: ownerId,
+          },
+        },
+
         images: {
           create: images,
         },
@@ -148,8 +176,8 @@ export class CarsService {
     });
   }
 
-  async update(id: number, updateCarDto: UpdateCarDto) {
-    await this.findOne(id);
+  async update(id: number, updateCarDto: UpdateCarDto, user: User) {
+    await this.validateCarOwnership(id, user);
 
     const { brandId, images, ...carData } = updateCarDto;
 
@@ -175,8 +203,8 @@ export class CarsService {
     });
   }
 
-  async remove(id: number) {
-    const car = await this.findOne(id);
+  async remove(id: number, user: User) {
+    const car = await this.validateCarOwnership(id, user);
 
     for (const image of car.images) {
       await this.cloudinaryService.destroy(image.publicId);
@@ -185,5 +213,21 @@ export class CarsService {
     return this.prisma.car.delete({
       where: { id },
     });
+  }
+
+  private async validateCarOwnership(carId: number, user: User) {
+    const car = await this.findOne(carId);
+
+    if (user.role === Role.ADMIN) {
+      return car;
+    }
+
+    if (car.ownerId !== user.id) {
+      throw new ForbiddenException(
+        'You do not have permission to modify this car',
+      );
+    }
+
+    return car;
   }
 }

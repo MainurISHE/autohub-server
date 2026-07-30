@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { RegisterDto } from 'src/auth/dto/register.dto';
 import { UsersService } from 'src/users/users.service';
 import { ConflictException } from '@nestjs/common';
@@ -11,6 +15,7 @@ import { RefreshTokenPayload } from './interfaces/refresh-token-payload.interfac
 import { User } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import type { StringValue } from 'ms';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -104,7 +109,6 @@ export class AuthService {
   }
 
   async refresh(user: User, refreshToken: string) {
-
     if (!user.refreshToken) {
       throw new UnauthorizedException('Invalid refresh token');
     }
@@ -120,5 +124,43 @@ export class AuthService {
 
   async logout(userId: number) {
     await this.usersService.removeRefreshToken(userId);
+  }
+
+  async changePassword(userId: number, changePasswordDto: ChangePasswordDto) {
+    const user = await this.usersService.findByIdWithPassword(userId);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      changePasswordDto.currentPassword,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Current is password incorrect');
+    }
+
+    const isSamePassword = await bcrypt.compare(
+      changePasswordDto.newPassword,
+      user.password,
+    );
+
+    if (isSamePassword) {
+      throw new BadRequestException(
+        'New password must be different from the current password',
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(changePasswordDto.newPassword, 10);
+
+    await this.usersService.updatePassword(user.id, hashedPassword)
+
+    await this.usersService.removeRefreshToken(user.id)
+
+    return {
+      message: 'Password changed successfully'
+    }
   }
 }

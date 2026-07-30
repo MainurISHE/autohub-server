@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Patch,
   Post,
   Req,
   Res,
@@ -17,6 +18,7 @@ import type { RefreshRequest } from './interfaces/refresh-request.interface';
 import type { Response } from 'express';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { User } from '@prisma/client';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -76,5 +78,14 @@ export class AuthController {
     return {
       message: 'Logged out successfully',
     };
+  }
+
+  @Patch('change-password')
+  @UseGuards(JwtAuthGuard)
+  changePassword(
+    @CurrentUser() user: User,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(user.id, changePasswordDto)
   }
 }

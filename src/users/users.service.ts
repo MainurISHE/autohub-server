@@ -4,6 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { UserMapper } from './mappers/user.mapper';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateProfileDto } from 'src/auth/dto/update-profile.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -11,6 +12,27 @@ export class UsersService {
     private readonly prisma: PrismaService,
     private readonly userMapper: UserMapper,
   ) {}
+
+  private async findByIdOrThrow(id: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
+  private updateUser(userId: number, data: Prisma.UserUpdateInput) {
+    return this.prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data,
+    });
+  }
 
   async findAll() {
     const users = await this.prisma.user.findMany();
@@ -27,39 +49,17 @@ export class UsersService {
   }
 
   async findById(id: number) {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        id,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+    const user = await this.findByIdOrThrow(id);
 
     return this.userMapper.toResponseDto(user);
   }
 
   async findByIdWithRefreshToken(id: number) {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        id,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    return user;
+    return this.findByIdOrThrow(id);
   }
 
   async findByIdWithPassword(id: number) {
-    return this.prisma.user.findUnique({
-      where: {
-        id,
-      },
-    });
+    return this.findByIdOrThrow(id);
   }
 
   async findByIdWithAvatar(id: number) {
@@ -87,18 +87,15 @@ export class UsersService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
-    await this.findById(id);
+    await this.findByIdOrThrow(id);
 
-    const user = await this.prisma.user.update({
-      where: { id },
-      data: updateUserDto,
-    });
+    const user = await this.updateUser(id, updateUserDto);
 
     return this.userMapper.toResponseDto(user);
   }
 
   async remove(id: number) {
-    await this.findById(id);
+    await this.findByIdOrThrow(id);
 
     const user = await this.prisma.user.delete({
       where: { id },
@@ -111,35 +108,20 @@ export class UsersService {
     userId: number,
     hashedRefreshToken: string,
   ): Promise<void> {
-    await this.prisma.user.update({
-      where: {
-        id: userId,
-      },
-      data: {
-        refreshToken: hashedRefreshToken,
-      },
+    await this.updateUser(userId, {
+      refreshToken: hashedRefreshToken,
     });
   }
 
   async removeRefreshToken(userId: number): Promise<void> {
-    await this.prisma.user.update({
-      where: {
-        id: userId,
-      },
-      data: {
-        refreshToken: null,
-      },
+    await this.updateUser(userId, {
+      refreshToken: null,
     });
   }
 
   async updatePassword(userId: number, password: string) {
-    return this.prisma.user.update({
-      where: {
-        id: userId,
-      },
-      data: {
-        password,
-      },
+    return this.updateUser(userId, {
+      password,
     });
   }
 
@@ -161,26 +143,16 @@ export class UsersService {
     avatarUrl: string,
     avatarPublicId: string,
   ) {
-    return this.prisma.user.update({
-      where: {
-        id: userId,
-      },
-      data: {
-        avatarUrl,
-        avatarPublicId,
-      },
+    return this.updateUser(userId, {
+      avatarUrl,
+      avatarPublicId,
     });
   }
 
   async removeAvatar(userId: number) {
-    return this.prisma.user.update({
-      where: {
-        id: userId,
-      },
-      data: {
-        avatarUrl: null,
-        avatarPublicId: null,
-      },
+    return this.updateUser(userId, {
+      avatarUrl: null,
+      avatarPublicId: null,
     });
   }
 }

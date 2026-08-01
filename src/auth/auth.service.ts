@@ -29,6 +29,60 @@ export class AuthService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
+  private static readonly SALT_ROUNDS = 10;
+
+  private async validatePassword(plain: string, hash: string) {
+    return bcrypt.compare(plain, hash);
+  }
+
+  private async getUserOrThrow(userId: number) {
+    const user = await this.usersService.findByIdWithPassword(userId);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return user;
+  }
+
+  private async getUserWithAvatarOrThrow(userId: number) {
+    const user = await this.usersService.findByIdWithAvatar(userId);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return user;
+  }
+
+  private async deleteAvatar(publicId?: string | null) {
+    if (!publicId) return;
+
+    await this.cloudinaryService.destroy(publicId);
+  }
+
+  private async generateAccessToken(
+    payload: AccessTokenPayload,
+  ): Promise<string> {
+    return this.jwtService.signAsync(payload, {
+      secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
+      expiresIn: this.configService.getOrThrow<StringValue>(
+        'JWT_ACCESS_EXPIRES_IN',
+      ),
+    });
+  }
+
+  private async generateRefreshToken(
+    payload: RefreshTokenPayload,
+  ): Promise<string> {
+    return this.jwtService.signAsync(payload, {
+      secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
+      expiresIn: this.configService.getOrThrow<StringValue>(
+        'JWT_REFRESH_EXPIRES_IN',
+      ),
+    });
+  }
+
   async register(registerDto: RegisterDto) {
     const user = await this.usersService.findByEmail(registerDto.email);
 
@@ -36,7 +90,10 @@ export class AuthService {
       throw new ConflictException('User with this email already exists');
     }
 
-    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+    const hashedPassword = await bcrypt.hash(
+      registerDto.password,
+      AuthService.SALT_ROUNDS,
+    );
 
     const createdUser = await this.usersService.create(
       registerDto,
@@ -53,7 +110,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const isPasswordValid = await bcrypt.compare(
+    const isPasswordValid = await this.validatePassword(
       loginDto.password,
       user.password,
     );
@@ -79,7 +136,10 @@ export class AuthService {
     const accessToken = await this.generateAccessToken(accessPayload);
     const refreshToken = await this.generateRefreshToken(refreshPayload);
 
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+    const hashedRefreshToken = await bcrypt.hash(
+      refreshToken,
+      AuthService.SALT_ROUNDS,
+    );
 
     await this.usersService.saveRefreshToken(user.id, hashedRefreshToken);
 
@@ -89,34 +149,15 @@ export class AuthService {
     };
   }
 
-  private async generateAccessToken(
-    payload: AccessTokenPayload,
-  ): Promise<string> {
-    return this.jwtService.signAsync(payload, {
-      secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
-      expiresIn: this.configService.getOrThrow<StringValue>(
-        'JWT_ACCESS_EXPIRES_IN',
-      ),
-    });
-  }
-
-  private async generateRefreshToken(
-    payload: RefreshTokenPayload,
-  ): Promise<string> {
-    return this.jwtService.signAsync(payload, {
-      secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
-      expiresIn: this.configService.getOrThrow<StringValue>(
-        'JWT_REFRESH_EXPIRES_IN',
-      ),
-    });
-  }
-
   async refresh(user: User, refreshToken: string) {
     if (!user.refreshToken) {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const isValid = await bcrypt.compare(refreshToken, user.refreshToken);
+    const isValid = await this.validatePassword(
+      refreshToken,
+      user.refreshToken,
+    );
 
     if (!isValid) {
       throw new UnauthorizedException('Invalid refresh token');
@@ -130,22 +171,18 @@ export class AuthService {
   }
 
   async changePassword(userId: number, changePasswordDto: ChangePasswordDto) {
-    const user = await this.usersService.findByIdWithPassword(userId);
+    const user = await this.getUserOrThrow(userId);
 
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
-    const isPasswordValid = await bcrypt.compare(
+    const isPasswordValid = await this.validatePassword(
       changePasswordDto.currentPassword,
       user.password,
     );
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Current is password incorrect');
+      throw new UnauthorizedException('Current password is incorrect');
     }
 
-    const isSamePassword = await bcrypt.compare(
+    const isSamePassword = await this.validatePassword(
       changePasswordDto.newPassword,
       user.password,
     );
@@ -156,7 +193,10 @@ export class AuthService {
       );
     }
 
-    const hashedPassword = await bcrypt.hash(changePasswordDto.newPassword, 10);
+    const hashedPassword = await bcrypt.hash(
+      changePasswordDto.newPassword,
+      AuthService.SALT_ROUNDS,
+    );
 
     await this.usersService.updatePassword(user.id, hashedPassword);
 
@@ -168,11 +208,7 @@ export class AuthService {
   }
 
   async updateProfile(userId: number, updateProfileDto: UpdateProfileDto) {
-    const user = await this.usersService.findByIdWithPassword(userId);
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
+    const user = await this.getUserOrThrow(userId);
 
     if (updateProfileDto.email) {
       const existingUser = await this.usersService.findByEmail(
@@ -180,7 +216,7 @@ export class AuthService {
       );
 
       if (existingUser && existingUser.id !== user.id) {
-        throw new ConflictException('Email is alredy in use');
+        throw new ConflictException('Email is already in use');
       }
     }
 
@@ -188,15 +224,9 @@ export class AuthService {
   }
 
   async changeAvatar(userId: number, image: Express.Multer.File) {
-    const user = await this.usersService.findByIdWithAvatar(userId);
+    const user = await this.getUserWithAvatarOrThrow(userId);
 
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
-    if (user.avatarPublicId) {
-      await this.cloudinaryService.destroy(user.avatarPublicId);
-    }
+    await this.deleteAvatar(user.avatarPublicId);
 
     const uploadedImage = await this.cloudinaryService.uploadImage(image);
 
@@ -210,17 +240,13 @@ export class AuthService {
   }
 
   async removeAvatar(userId: number) {
-    const user = await this.usersService.findByIdWithAvatar(userId);
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
+    const user = await this.getUserWithAvatarOrThrow(userId);
 
     if (!user.avatarPublicId) {
       throw new BadRequestException('User does not have an avatar');
     }
 
-    await this.cloudinaryService.destroy(user.avatarPublicId);
+    await this.deleteAvatar(user.avatarPublicId);
 
     await this.usersService.removeAvatar(user.id);
 

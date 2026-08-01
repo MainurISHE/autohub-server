@@ -1,12 +1,18 @@
 import {
   Body,
   Controller,
+  Delete,
+  FileTypeValidator,
   Get,
+  MaxFileSizeValidator,
+  ParseFilePipe,
   Patch,
   Post,
   Req,
   Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { RegisterDto } from 'src/auth/dto/register.dto';
 import { AuthService } from './auth.service';
@@ -20,6 +26,7 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import type { User } from '@prisma/client';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('auth')
 export class AuthController {
@@ -97,5 +104,33 @@ export class AuthController {
     @Body() changePasswordDto: ChangePasswordDto,
   ) {
     return this.authService.changePassword(user.id, changePasswordDto);
+  }
+
+  @Patch('avatar')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('image'))
+  changeAvatar(
+    @CurrentUser() user: User,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new FileTypeValidator({
+            fileType: /(jpg|jpeg|png|webp)$/,
+          }),
+          new MaxFileSizeValidator({
+            maxSize: 5 * 1024 * 1024,
+          }),
+        ],
+      }),
+    )
+    image: Express.Multer.File,
+  ) {
+    return this.authService.changeAvatar(user.id, image);
+  }
+
+  @Delete('avatar')
+  @UseGuards(JwtAuthGuard)
+  removeAvatar(@CurrentUser() user: User) {
+    return this.authService.removeAvatar(user.id);
   }
 }

@@ -62,6 +62,20 @@ export class UsersService {
     });
   }
 
+  async findByIdWithAvatar(id: number) {
+    return this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+
+      select: {
+        id: true,
+        avatarUrl: true,
+        avatarPublicId: true,
+      },
+    });
+  }
+
   async create(registerDto: RegisterDto, hashedPassword: string) {
     const { password, ...userData } = registerDto;
     return this.prisma.user.create({
@@ -138,6 +152,34 @@ export class UsersService {
       omit: {
         password: true,
         refreshToken: true,
+      },
+    });
+  }
+
+  async updateAvatar(
+    userId: number,
+    avatarUrl: string,
+    avatarPublicId: string,
+  ) {
+    return this.prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        avatarUrl,
+        avatarPublicId,
+      },
+    });
+  }
+
+  async removeAvatar(userId: number) {
+    return this.prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        avatarUrl: null,
+        avatarPublicId: null,
       },
     });
   }

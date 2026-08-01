@@ -16,7 +16,7 @@ export class UploadsController {
   constructor(private readonly uploadsService: UploadsService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('image'))
   async upload(
     @UploadedFile(
       new ParseFilePipe({
@@ -31,10 +31,10 @@ export class UploadsController {
         ],
       }),
     )
-    file: Express.Multer.File,
+    image: Express.Multer.File,
   ) {
 
-    return this.uploadsService.uploadImage(file)
+    return this.uploadsService.uploadImage(image)
   }
 
 

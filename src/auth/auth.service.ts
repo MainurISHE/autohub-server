@@ -17,6 +17,7 @@ import { ConfigService } from '@nestjs/config';
 import type { StringValue } from 'ms';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class AuthService {
@@ -25,6 +26,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly userMapper: UserMapper,
     private readonly configService: ConfigService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -183,5 +185,45 @@ export class AuthService {
     }
 
     return this.usersService.updateProfile(user.id, updateProfileDto);
+  }
+
+  async changeAvatar(userId: number, image: Express.Multer.File) {
+    const user = await this.usersService.findByIdWithAvatar(userId);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    if (user.avatarPublicId) {
+      await this.cloudinaryService.destroy(user.avatarPublicId);
+    }
+
+    const uploadedImage = await this.cloudinaryService.uploadImage(image);
+
+    await this.usersService.updateAvatar(
+      user.id,
+      uploadedImage.url,
+      uploadedImage.publicId,
+    );
+
+    return this.usersService.findById(user.id);
+  }
+
+  async removeAvatar(userId: number) {
+    const user = await this.usersService.findByIdWithAvatar(userId);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    if (!user.avatarPublicId) {
+      throw new BadRequestException('User does not have an avatar');
+    }
+
+    await this.cloudinaryService.destroy(user.avatarPublicId);
+
+    await this.usersService.removeAvatar(user.id);
+
+    return this.usersService.findById(user.id);
   }
 }

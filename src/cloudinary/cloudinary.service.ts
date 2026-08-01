@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { v2 as cloudinary } from 'cloudinary';
 import { Readable } from 'stream';
+import { UploadedImage } from './interfaces/upload-image.interface';
 
 @Injectable()
 export class CloudinaryService {
@@ -12,8 +13,8 @@ export class CloudinaryService {
     });
   }
 
-  async uploadImage(file: Express.Multer.File) {
-    return new Promise((resolve, reject) => {
+  async uploadImage(image: Express.Multer.File): Promise<UploadedImage> {
+    return new Promise<UploadedImage>((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {},
         (error, result) => {
@@ -22,14 +23,15 @@ export class CloudinaryService {
           }
 
           resolve({
-            url: result?.secure_url,
-            publicId: result?.public_id,
-            width: result?.width,
-            height: result?.height,
+            url: result!.secure_url,
+            publicId: result!.public_id,
+            width: result!.width,
+            height: result!.height,
           });
         },
       );
-      Readable.from(file.buffer).pipe(uploadStream);
+
+      Readable.from(image.buffer).pipe(uploadStream);
     });
   }
 

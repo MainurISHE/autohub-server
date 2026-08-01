@@ -144,6 +144,9 @@ model User {
   cars Car[]
   favorites Favorite[]
 
+  avatarUrl String?
+  avatarPublicId String?
+
   role Role @default(USER)
 
   createdAt   DateTime @default(now())

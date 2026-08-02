@@ -45,6 +45,7 @@ export class AuthController {
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
+    console.log('Controller login:', loginDto);
     const tokens = await this.authService.login(loginDto);
 
     res.cookie('refreshToken', tokens.refreshToken, {

@@ -24,6 +24,14 @@ export class CarsController {
         return this.carsService.findOne(id)
     }
 
+    @Get('my')
+    @UseGuards(JwtAuthGuard)
+    findMyCars(
+        @CurrentUser() user: User,
+    ) {
+        return this.carsService.findMyCars(user.id)
+    }
+
     @Post()
     @UseGuards(JwtAuthGuard)
     create(

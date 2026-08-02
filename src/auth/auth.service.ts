@@ -104,7 +104,11 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
+    console.log('1. Login request:', loginDto);
+
     const user = await this.usersService.findByEmail(loginDto.email);
+
+    console.log('2. User:', user);
 
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
@@ -115,9 +119,13 @@ export class AuthService {
       user.password,
     );
 
+    console.log('3. Password valid:', isPasswordValid);
+
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid email or password');
     }
+
+    console.log('4. Issuing tokens');
 
     return this.issueTokens(user);
   }

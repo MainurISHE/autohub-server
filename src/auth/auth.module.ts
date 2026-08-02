@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import type { StringValue } from 'ms';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshJwtStrategy } from './strategies/refresh-jwt.strategy';
+import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 
 @Module({
   controllers: [AuthController],
@@ -17,6 +18,7 @@ import { RefreshJwtStrategy } from './strategies/refresh-jwt.strategy';
   ],
   imports: [
     UsersModule,
+    CloudinaryModule,
     JwtModule.registerAsync({
       imports: [],
       inject: [ConfigService],

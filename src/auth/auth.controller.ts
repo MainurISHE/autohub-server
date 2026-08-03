@@ -27,6 +27,7 @@ import type { User } from '@prisma/client';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { access } from 'node:fs';
 
 @Controller('auth')
 export class AuthController {
@@ -77,10 +78,24 @@ export class AuthController {
 
   @Post('refresh')
   @UseGuards(RefreshJwtAuthGuard)
-  refresh(@Req() req: RefreshRequest) {
+  async refresh(
+    @Req() req: RefreshRequest,
+    @Res({ passthrough: true }) res: Response
+  ) {
     const { user, refreshToken } = req.user;
+    
+    const tokens = await this.authService.refresh(user, refreshToken);
 
-    return this.authService.refresh(user, refreshToken);
+    res.cookie("refreshToken", tokens.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    })
+
+    return {
+      accessToken: tokens.accessToken,
+    }
   }
 
   @Post('logout')

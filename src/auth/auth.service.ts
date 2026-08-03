@@ -100,7 +100,9 @@ export class AuthService {
       hashedPassword,
     );
 
-    return this.userMapper.toResponseDto(createdUser);
+    const tokens = await this.issueTokens(createdUser)
+
+    return tokens;
   }
 
   async login(loginDto: LoginDto) {

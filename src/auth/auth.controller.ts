@@ -37,8 +37,23 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  async register(
+    @Body() registerDto: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    console.log('Controller register:', registerDto);
+    const tokens = await this.authService.register(registerDto);
+
+    res.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return {
+      accessToken: tokens.accessToken,
+    };
   }
 
   @Post('login')
@@ -78,12 +93,10 @@ export class AuthController {
 
   @Post('refresh')
   @UseGuards(RefreshJwtAuthGuard)
-  async refresh(
-    @Req() req: RefreshRequest,
-  ) {
+  async refresh(@Req() req: RefreshRequest) {
     const { user, refreshToken } = req.user;
 
-    return this.authService.refresh(user, refreshToken)
+    return this.authService.refresh(user, refreshToken);
   }
 
   @Post('logout')

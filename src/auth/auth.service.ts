@@ -130,18 +130,23 @@ export class AuthService {
     return this.issueTokens(user);
   }
 
-  private async issueTokens(user: User) {
+  private async issueAccessToken(user: User): Promise<string> {
     const accessPayload: AccessTokenPayload = {
       sub: user.id,
       email: user.email,
       role: user.role,
     };
 
+    return this.generateAccessToken(accessPayload);
+  }
+
+  private async issueTokens(user: User) {
+    const accessToken = await this.issueAccessToken(user);
+
     const refreshPayload: RefreshTokenPayload = {
       sub: user.id,
     };
 
-    const accessToken = await this.generateAccessToken(accessPayload);
     const refreshToken = await this.generateRefreshToken(refreshPayload);
 
     const hashedRefreshToken = await bcrypt.hash(
@@ -171,7 +176,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    return this.issueTokens(user);
+    const accessToken = await this.issueAccessToken(user);
+
+    return {
+      accessToken
+    }
   }
 
   async logout(userId: number) {

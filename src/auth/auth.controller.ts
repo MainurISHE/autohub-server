@@ -80,22 +80,10 @@ export class AuthController {
   @UseGuards(RefreshJwtAuthGuard)
   async refresh(
     @Req() req: RefreshRequest,
-    @Res({ passthrough: true }) res: Response
   ) {
     const { user, refreshToken } = req.user;
-    
-    const tokens = await this.authService.refresh(user, refreshToken);
 
-    res.cookie("refreshToken", tokens.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    })
-
-    return {
-      accessToken: tokens.accessToken,
-    }
+    return this.authService.refresh(user, refreshToken)
   }
 
   @Post('logout')

@@ -169,9 +169,11 @@ export class CarsService {
           },
         },
 
-        images: {
-          create: images,
-        },
+        ...(images && {
+          images: {
+            create: images,
+          },
+        }),
       },
     });
   }

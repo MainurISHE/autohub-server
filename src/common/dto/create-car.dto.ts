@@ -4,6 +4,7 @@ import {
   IsEnum,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsPositive,
   IsString,
   Max,
@@ -84,9 +85,10 @@ export class CreateCarDto {
   @IsPositive()
   brandId!: number;
 
+  @IsOptional()
   @IsArray()
-  @ArrayNotEmpty()
+  // @ArrayNotEmpty()
   @ValidateNested({ each: true })
   @Type(() => CreateCarImageDto)
-  images!: CreateCarImageDto[]
+  images?: CreateCarImageDto[]
 }

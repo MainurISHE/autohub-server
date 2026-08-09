@@ -8,7 +8,11 @@ export class BrandsService {
   constructor(private readonly prisma: PrismaService) {}
 
   findAll() {
-    return this.prisma.brand.findMany();
+    return this.prisma.brand.findMany({
+      orderBy: {
+        name: 'asc',
+      },
+    });
   }
 
   async findOne(id: number) {
@@ -32,7 +36,7 @@ export class BrandsService {
   }
 
   async update(id: number, updateBrandDto: UpdateBrandDto) {
-    await this.findOne(id);;
+    await this.findOne(id);
 
     return this.prisma.brand.update({
       where: {

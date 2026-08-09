@@ -12,6 +12,14 @@ import { Prisma, Role, User } from '@prisma/client';
 import { SortOrder } from 'src/common/enums/sort-order.enum';
 import { BrandsService } from 'src/brands/brands.service';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import {
+  CarBodyType,
+  CarColor,
+  CarDriveType,
+  CarFuelType,
+  CarStatus,
+  CarTransmission,
+} from '@prisma/client';
 
 @Injectable()
 export class CarsService {
@@ -148,6 +156,17 @@ export class CarsService {
         },
       },
     });
+  }
+
+  getOptions() {
+    return {
+      fuelTypes: Object.values(CarFuelType),
+      transmissions: Object.values(CarTransmission),
+      driveTypes: Object.values(CarDriveType),
+      bodyTypes: Object.values(CarBodyType),
+      colors: Object.values(CarColor),
+      statuses: Object.values(CarStatus),
+    };
   }
 
   create(createCarDto: CreateCarDto, ownerId: number) {

@@ -19,6 +19,11 @@ export class CarsController {
         return this.carsService.findAll(getCarsQueryDto)
     }
 
+    @Get("options")
+    getOptions() {
+        return this.carsService.getOptions()
+    }
+
     @Get(':id')
     findOne(@Param('id', ParseIntPipe) id: number) {
         return this.carsService.findOne(id)

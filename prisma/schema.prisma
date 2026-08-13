@@ -88,6 +88,7 @@ model Car {
   mileage      Int
   engineVolume Int
   horsepower   Int
+  
   fuelType     CarFuelType
   transmission CarTransmission
   driveType    CarDriveType

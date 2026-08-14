@@ -34,7 +34,7 @@ export class CarsService {
     const price: Prisma.IntFilter = {};
     const orderBy: Prisma.CarOrderByWithRelationInput = {};
     const page = getCarsQueryDto.page ?? 1;
-    const limit = getCarsQueryDto.limit ?? 10;
+    const limit = getCarsQueryDto.limit ?? 12;
 
     const skip = (page - 1) * limit;
 

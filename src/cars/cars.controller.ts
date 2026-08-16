@@ -24,17 +24,17 @@ export class CarsController {
         return this.carsService.getOptions()
     }
 
-    @Get(':id')
-    findOne(@Param('id', ParseIntPipe) id: number) {
-        return this.carsService.findOne(id)
-    }
-
     @Get('my')
     @UseGuards(JwtAuthGuard)
     findMyCars(
         @CurrentUser() user: User,
     ) {
         return this.carsService.findMyCars(user.id)
+    }
+
+    @Get(':id')
+    findOne(@Param('id', ParseIntPipe) id: number) {
+        return this.carsService.findOne(id)
     }
 
     @Post()

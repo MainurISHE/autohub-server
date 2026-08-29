@@ -131,7 +131,18 @@ export class CarsService {
   async findOne(id: number) {
     const car = await this.prisma.car.findUnique({
       where: { id },
-      include: { brand: true, images: { orderBy: { order: 'asc' } } },
+      include: {
+        brand: true,
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        },
+        images: { orderBy: { order: 'asc' } },
+      },
     });
 
     if (!car) {

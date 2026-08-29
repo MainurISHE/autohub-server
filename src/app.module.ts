@@ -10,6 +10,8 @@ import { UsersModule } from './users/users.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { FavoritesModule } from './favorites/favorites.module';
+import { ConversationsModule } from './conversations/conversations.module';
+import { MessagesModule } from './messages/messages.module';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { FavoritesModule } from './favorites/favorites.module';
     UploadsModule,
     CloudinaryModule,
     FavoritesModule,
+    ConversationsModule,
+    MessagesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

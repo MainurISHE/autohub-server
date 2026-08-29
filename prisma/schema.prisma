@@ -80,7 +80,7 @@ model Brand {
 }
 
 model Car {
-  id           Int             @id @default(autoincrement())
+  id           Int     @id @default(autoincrement())
   title        String
   description  String
   price        Decimal
@@ -88,7 +88,7 @@ model Car {
   mileage      Int
   engineVolume Int
   horsepower   Int
-  
+
   fuelType     CarFuelType
   transmission CarTransmission
   driveType    CarDriveType
@@ -102,7 +102,7 @@ model Car {
   brand   Brand @relation(fields: [brandId], references: [id])
 
   ownerId Int
-  owner User @relation(fields: [ownerId], references: [id])
+  owner   User @relation(fields: [ownerId], references: [id])
 
   favorites Favorite[]
 
@@ -111,12 +111,12 @@ model Car {
 }
 
 model CarImage {
-  id Int             @id @default(autoincrement())
-  url String
-  publicId String
-  order Int
-  carId Int
-  car Car @relation(fields: [carId], references: [id], onDelete: Cascade)
+  id        Int      @id @default(autoincrement())
+  url       String
+  publicId  String
+  order     Int
+  carId     Int
+  car       Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 }
 
@@ -134,22 +134,59 @@ model Favorite {
 }
 
 model User {
-  id          Int      @id @default(autoincrement())
-  name        String
-  lastName    String
-  email       String   @unique
-  password    String
-  phoneNumber String?
+  id           Int     @id @default(autoincrement())
+  name         String
+  lastName     String
+  email        String  @unique
+  password     String
+  phoneNumber  String?
   refreshToken String?
 
-  cars Car[]
+  cars      Car[]
   favorites Favorite[]
 
-  avatarUrl String?
+  conversationsAsUser1 Conversation[] @relation("ConversationUser1")
+  conversationsAsUser2 Conversation[] @relation("ConversationUser2")
+
+  sentMessages Message[] @relation("MessageSender")
+
+  avatarUrl      String?
   avatarPublicId String?
 
   role Role @default(USER)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Conversation {
+  id Int @id @default(autoincrement())
+
+  user1Id Int
+  user2Id Int
+
+  user1 User @relation("ConversationUser1", fields: [user1Id], references: [id])
+  user2 User @relation("ConversationUser2", fields: [user2Id], references: [id])
+
+  messages Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Message {
+  id Int @id @default(autoincrement())
+
+  content String
+
+  conversationId Int
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+
+  senderId Int
+  sender   User @relation("MessageSender", fields: [senderId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  readAt DateTime?
 }

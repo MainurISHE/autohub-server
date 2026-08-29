@@ -3,7 +3,8 @@ export class UserResponseDto {
   name!: string;
   lastName!: string;
   email!: string;
-  phoneNumber!: null | string;
+  phoneNumber!: string | null;
+  avatarUrl!: string | null;
   role!: string;
   createdAt!: Date;
   updatedAt!: Date;

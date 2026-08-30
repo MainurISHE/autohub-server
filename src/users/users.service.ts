@@ -40,6 +40,41 @@ export class UsersService {
     return this.userMapper.toResponseDtos(users);
   }
 
+  async findPublicProfile(id: number) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+      select: {
+        id: true,
+        name: true,
+        lastName: true,
+        avatarUrl: true,
+        createdAt: true,
+
+        cars: {
+          include: {
+            brand: true,
+            images: {
+              orderBy: {
+                order: 'asc',
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: {

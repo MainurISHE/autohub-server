@@ -8,6 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { User } from '@prisma/client';
+
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { FavoritesService } from './favorites.service';
@@ -22,7 +23,7 @@ export class FavoritesController {
     return this.favoritesService.findAllFavorites(user.id);
   }
 
-  @Post()
+  @Post(':carId')
   @UseGuards(JwtAuthGuard)
   addToFavorites(
     @Param('carId', ParseIntPipe) carId: number,
@@ -31,7 +32,7 @@ export class FavoritesController {
     return this.favoritesService.addToFavorites(user.id, carId);
   }
 
-  @Delete()
+  @Delete(':carId')
   @UseGuards(JwtAuthGuard)
   removeFromFavorites(
     @Param('carId', ParseIntPipe) carId: number,

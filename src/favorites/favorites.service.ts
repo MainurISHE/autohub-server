@@ -3,7 +3,6 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { connect } from 'node:http2';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -29,7 +28,7 @@ export class FavoritesService {
     });
 
     if (favorite) {
-      throw new ConflictException('Car is alredy in favorites');
+      throw new ConflictException('Car is already in favorites');
     }
 
     return this.prisma.favorite.create({

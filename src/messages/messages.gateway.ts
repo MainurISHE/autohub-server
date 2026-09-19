@@ -16,7 +16,8 @@ import { MessagesService } from './messages.service';
 
 @WebSocketGateway({
   cors: {
-    origin: 'http://localhost:3000',
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
   },
 })
 export class MessagesGateway implements OnGatewayConnection {

@@ -45,22 +45,29 @@ export class CarsService {
     }
 
     if (getCarsQueryDto.search) {
-      where.OR = [
-        {
-          title: {
-            contains: getCarsQueryDto.search,
-            mode: 'insensitive',
-          },
-        },
-        {
-          brand: {
-            name: {
-              contains: getCarsQueryDto.search,
+      const searchWords = getCarsQueryDto.search
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+
+      where.AND = searchWords.map((word) => ({
+        OR: [
+          {
+            title: {
+              contains: word,
               mode: 'insensitive',
             },
           },
-        },
-      ];
+          {
+            brand: {
+              name: {
+                contains: word,
+                mode: 'insensitive',
+              },
+            },
+          },
+        ],
+      }));
     }
 
     if (getCarsQueryDto.minPrice != null) {

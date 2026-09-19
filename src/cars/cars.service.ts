@@ -45,10 +45,22 @@ export class CarsService {
     }
 
     if (getCarsQueryDto.search) {
-      where.title = {
-        contains: getCarsQueryDto.search,
-        mode: 'insensitive',
-      };
+      where.OR = [
+        {
+          title: {
+            contains: getCarsQueryDto.search,
+            mode: 'insensitive',
+          },
+        },
+        {
+          brand: {
+            name: {
+              contains: getCarsQueryDto.search,
+              mode: 'insensitive',
+            },
+          },
+        },
+      ];
     }
 
     if (getCarsQueryDto.minPrice != null) {
